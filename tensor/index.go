@@ -1,5 +1,9 @@
 package tensor
 
+func (t *Tensor) At(indices ...int) float64 {
+	return t.data[t.offsetOf(indices...)]
+}
+
 func (t *Tensor) offsetOf(indices ...int) int {
 	if len(indices) != len(t.shape) {
 		panic("invalid indices")
