@@ -127,3 +127,38 @@ func TestShape(t *testing.T) {
 		})
 	}
 }
+
+func TestRank(t *testing.T) {
+	tests := []struct {
+		name  string
+		shape []int
+		want  int
+	}{
+		{
+			name:  "1D tensor",
+			shape: []int{5},
+			want:  1,
+		},
+		{
+			name:  "2D tensor",
+			shape: []int{3, 4},
+			want:  2,
+		},
+		{
+			name:  "3D tensor",
+			shape: []int{2, 5, 3},
+			want:  3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := New(tt.shape...)
+			rank := got.Rank()
+
+			if !reflect.DeepEqual(rank, tt.want) {
+				t.Errorf("rank: want %v, got %v", tt.want, rank)
+			}
+		})
+	}
+}

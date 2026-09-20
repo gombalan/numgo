@@ -40,3 +40,7 @@ func New(shape ...int) *Tensor {
 func (t *Tensor) Shape() []int {
 	return append([]int(nil), t.shape...)
 }
+
+func (t *Tensor) Rank() int {
+	return len(t.shape)
+}
