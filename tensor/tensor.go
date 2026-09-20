@@ -36,3 +36,7 @@ func New(shape ...int) *Tensor {
 		strides: strides,
 	}
 }
+
+func (t *Tensor) Shape() []int {
+	return append([]int(nil), t.shape...)
+}

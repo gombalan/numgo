@@ -92,3 +92,38 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+
+func TestShape(t *testing.T) {
+	tests := []struct {
+		name  string
+		shape []int
+		want  []int
+	}{
+		{
+			name:  "1D tensor",
+			shape: []int{5},
+			want:  []int{5},
+		},
+		{
+			name:  "2D tensor",
+			shape: []int{3, 4},
+			want:  []int{3, 4},
+		},
+		{
+			name:  "3D tensor",
+			shape: []int{2, 5, 3},
+			want:  []int{2, 5, 3},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := New(tt.shape...)
+			shape := got.Shape()
+
+			if !reflect.DeepEqual(shape, tt.want) {
+				t.Errorf("shape: want %v, got %v", tt.want, shape)
+			}
+		})
+	}
+}
