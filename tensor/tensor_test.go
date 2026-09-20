@@ -162,3 +162,38 @@ func TestRank(t *testing.T) {
 		})
 	}
 }
+
+func TestSize(t *testing.T) {
+	tests := []struct {
+		name  string
+		shape []int
+		want  int
+	}{
+		{
+			name:  "1D tensor",
+			shape: []int{5},
+			want:  5,
+		},
+		{
+			name:  "2D tensor",
+			shape: []int{3, 4},
+			want:  12,
+		},
+		{
+			name:  "3D tensor",
+			shape: []int{2, 5, 3},
+			want:  30,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := New(tt.shape...)
+			size := got.Size()
+
+			if !reflect.DeepEqual(size, tt.want) {
+				t.Errorf("size: want %v, got %v", tt.want, size)
+			}
+		})
+	}
+}

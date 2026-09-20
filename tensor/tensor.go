@@ -44,3 +44,7 @@ func (t *Tensor) Shape() []int {
 func (t *Tensor) Rank() int {
 	return len(t.shape)
 }
+
+func (t *Tensor) Size() int {
+	return len(t.data)
+}
