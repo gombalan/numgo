@@ -197,3 +197,115 @@ func TestSize(t *testing.T) {
 		})
 	}
 }
+
+func TestOffsetOf(t *testing.T) {
+	tests := []struct {
+		name      string
+		shape     []int
+		indices   []int
+		wantPanic string
+		want      int
+	}{
+		{
+			name:      "too few indices",
+			shape:     []int{2, 3},
+			indices:   []int{1},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "too many indices",
+			shape:     []int{2, 3},
+			indices:   []int{1, 1, 1},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "negative index",
+			shape:     []int{2, 3},
+			indices:   []int{1, -1},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "index equal dimension",
+			shape:     []int{2, 3},
+			indices:   []int{1, 3},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "index out of bound",
+			shape:     []int{2, 3},
+			indices:   []int{1, 5},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:    "1D first element",
+			shape:   []int{5},
+			indices: []int{0},
+			want:    0,
+		},
+		{
+			name:    "1D middle element",
+			shape:   []int{5},
+			indices: []int{3},
+			want:    3,
+		},
+		{
+			name:    "1D last element",
+			shape:   []int{5},
+			indices: []int{4},
+			want:    4,
+		},
+		{
+			name:    "2D first element",
+			shape:   []int{2, 3},
+			indices: []int{0, 0},
+			want:    0,
+		},
+		{
+			name:    "2D middle element",
+			shape:   []int{2, 3},
+			indices: []int{1, 1},
+			want:    4,
+		},
+		{
+			name:    "2D last element",
+			shape:   []int{2, 3},
+			indices: []int{1, 2},
+			want:    5,
+		},
+		{
+			name:    "3D first element",
+			shape:   []int{2, 5, 3},
+			indices: []int{0, 0, 0},
+			want:    0,
+		},
+		{
+			name:    "3D middle element",
+			shape:   []int{2, 5, 3},
+			indices: []int{1, 2, 2},
+			want:    23,
+		},
+		{
+			name:    "3D last element",
+			shape:   []int{2, 5, 3},
+			indices: []int{1, 4, 2},
+			want:    29,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tensor := New(tt.shape...)
+
+			if tt.wantPanic != "" {
+				mustPanic(t, tt.wantPanic, func() { tensor.offsetOf(tt.indices...) })
+				return
+			}
+
+			offset := tensor.offsetOf(tt.indices...)
+
+			if offset != tt.want {
+				t.Errorf("offset: want %v, got %v", tt.want, offset)
+			}
+		})
+	}
+}
