@@ -21,6 +21,14 @@ func New(shape ...int) *Tensor {
 		size *= n
 	}
 
+	return &Tensor{
+		data:    make([]float64, size),
+		shape:   append([]int(nil), shape...),
+		strides: makeStrides(shape...),
+	}
+}
+
+func makeStrides(shape ...int) []int {
 	strides := make([]int, len(shape))
 
 	stride := 1
@@ -30,11 +38,7 @@ func New(shape ...int) *Tensor {
 		stride *= shape[i]
 	}
 
-	return &Tensor{
-		data:    make([]float64, size),
-		shape:   append([]int(nil), shape...),
-		strides: strides,
-	}
+	return strides
 }
 
 func (t *Tensor) Shape() []int {

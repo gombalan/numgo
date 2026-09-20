@@ -28,6 +28,45 @@ func mustPanic(t *testing.T, want string, fn func()) {
 	fn()
 }
 
+func TestMakeStrides(t *testing.T) {
+	tests := []struct {
+		name  string
+		shape []int
+		want  []int
+	}{
+		{
+			name:  "0D shape",
+			shape: []int{},
+			want:  []int{},
+		},
+		{
+			name:  "1D shape",
+			shape: []int{5},
+			want:  []int{1},
+		},
+		{
+			name:  "2D shape",
+			shape: []int{2, 3},
+			want:  []int{3, 1},
+		},
+		{
+			name:  "3D shape",
+			shape: []int{2, 3, 4},
+			want:  []int{12, 4, 1},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			strides := makeStrides(tt.shape...)
+
+			if !reflect.DeepEqual(strides, tt.want) {
+				t.Errorf("strides: want %v, got %v", tt.want, strides)
+			}
+		})
+	}
+}
+
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name        string
