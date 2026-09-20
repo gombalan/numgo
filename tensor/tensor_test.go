@@ -425,3 +425,127 @@ func TestAt(t *testing.T) {
 		})
 	}
 }
+
+func TestSet(t *testing.T) {
+	tests := []struct {
+		name      string
+		shape     []int
+		indices   []int
+		value     float64
+		wantPanic string
+		want      float64
+	}{
+		{
+			name:      "too few indices",
+			shape:     []int{2, 3},
+			indices:   []int{1},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "too many indices",
+			shape:     []int{2, 3},
+			indices:   []int{1, 1, 1},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "negative index",
+			shape:     []int{2, 3},
+			indices:   []int{1, -1},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "index equal dimension",
+			shape:     []int{2, 3},
+			indices:   []int{1, 3},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:      "index out of bound",
+			shape:     []int{2, 3},
+			indices:   []int{1, 5},
+			wantPanic: "invalid indices",
+		},
+		{
+			name:    "1D first element",
+			shape:   []int{5},
+			indices: []int{0},
+			value:   0.5,
+			want:    0.5,
+		},
+		{
+			name:    "1D middle element",
+			shape:   []int{5},
+			indices: []int{3},
+			value:   3.5,
+			want:    3.5,
+		},
+		{
+			name:    "1D last element",
+			shape:   []int{5},
+			indices: []int{4},
+			value:   4.5,
+			want:    4.5,
+		},
+		{
+			name:    "2D first element",
+			shape:   []int{2, 3},
+			indices: []int{0, 0},
+			value:   0.5,
+			want:    0.5,
+		},
+		{
+			name:    "2D middle element",
+			shape:   []int{2, 3},
+			indices: []int{1, 1},
+			value:   4.5,
+			want:    4.5,
+		},
+		{
+			name:    "2D last element",
+			shape:   []int{2, 3},
+			indices: []int{1, 2},
+			value:   5.5,
+			want:    5.5,
+		},
+		{
+			name:    "3D first element",
+			shape:   []int{2, 5, 3},
+			indices: []int{0, 0, 0},
+			value:   0.5,
+			want:    0.5,
+		},
+		{
+			name:    "3D middle element",
+			shape:   []int{2, 5, 3},
+			indices: []int{1, 2, 2},
+			value:   23.5,
+			want:    23.5,
+		},
+		{
+			name:    "3D last element",
+			shape:   []int{2, 5, 3},
+			indices: []int{1, 4, 2},
+			value:   29.5,
+			want:    29.5,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tensor := New(tt.shape...)
+
+			if tt.wantPanic != "" {
+				mustPanic(t, tt.wantPanic, func() { tensor.At(tt.indices...) })
+				return
+			}
+
+			tensor.Set(tt.value, tt.indices...)
+
+			value := tensor.At(tt.indices...)
+
+			if value != tt.want {
+				t.Errorf("value: want %v, got %v", tt.want, value)
+			}
+		})
+	}
+}
