@@ -52,3 +52,29 @@ func (t *Tensor) Rank() int {
 func (t *Tensor) Size() int {
 	return len(t.data)
 }
+
+func (t *Tensor) Reshape(shape ...int) *Tensor {
+	if len(shape) == 0 {
+		panic("tensor must have at least one dimension")
+	}
+
+	size := 1
+
+	for _, n := range shape {
+		if n <= 0 {
+			panic("invalid shape")
+		}
+
+		size *= n
+	}
+
+	if size != len(t.data) {
+		panic("reshape size mismatch")
+	}
+
+	return &Tensor{
+		data:    t.data,
+		shape:   append([]int(nil), shape...),
+		strides: makeStrides(shape...),
+	}
+}

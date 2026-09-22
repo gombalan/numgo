@@ -452,7 +452,7 @@ func TestAt(t *testing.T) {
 				return
 			}
 
-			for i, _ := range tensor.data {
+			for i := range tensor.data {
 				tensor.data[i] = float64(i) + 0.5
 			}
 
@@ -584,6 +584,64 @@ func TestSet(t *testing.T) {
 
 			if value != tt.want {
 				t.Errorf("value: want %v, got %v", tt.want, value)
+			}
+		})
+	}
+}
+
+func TestReshape(t *testing.T) {
+	tests := []struct {
+		name      string
+		shape     []int
+		newShape  []int
+		wantPanic string
+		want      []int
+	}{
+		{
+			name:      "invalid dimension",
+			shape:     []int{2, 3},
+			newShape:  []int{},
+			wantPanic: "tensor must have at least one dimension",
+		},
+		{
+			name:      "invalid dimension",
+			shape:     []int{2, 3},
+			newShape:  []int{0, 2},
+			wantPanic: "invalid shape",
+		},
+		{
+			name:      "reshape size mismatch",
+			shape:     []int{2, 3},
+			newShape:  []int{4, 5},
+			wantPanic: "reshape size mismatch",
+		},
+		{
+			name:     "same shape",
+			shape:    []int{2, 3},
+			newShape: []int{2, 3},
+			want:     []int{2, 3},
+		},
+		{
+			name:     "compatible shape",
+			shape:    []int{4, 3},
+			newShape: []int{2, 6},
+			want:     []int{2, 6},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tensor := New(tt.shape...)
+
+			if tt.wantPanic != "" {
+				mustPanic(t, tt.wantPanic, func() { _ = tensor.Reshape(tt.newShape...) })
+				return
+			}
+
+			newTensor := tensor.Reshape(tt.newShape...)
+
+			if !reflect.DeepEqual(newTensor.shape, tt.want) {
+				t.Errorf("shape: want: %v, got: %v", tt.want, newTensor.shape)
 			}
 		})
 	}
