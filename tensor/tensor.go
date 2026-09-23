@@ -60,33 +60,6 @@ func (t *Tensor) Size() int {
 	return size
 }
 
-func (t *Tensor) Reshape(shape ...int) *Tensor {
-	if len(shape) == 0 {
-		panic("tensor must have at least one dimension")
-	}
-
-	newSize := 1
-
-	for _, n := range shape {
-		if n <= 0 {
-			panic("invalid shape")
-		}
-
-		newSize *= n
-	}
-
-	if newSize != len(t.data) {
-		panic("reshape size mismatch")
-	}
-
-	return &Tensor{
-		data:    t.data,
-		shape:   append([]int(nil), shape...),
-		strides: makeStrides(shape...),
-		offset:  t.offset,
-	}
-}
-
 func (t *Tensor) IsContiguous() bool {
 	expected := 1
 
