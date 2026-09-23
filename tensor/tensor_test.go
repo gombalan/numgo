@@ -669,3 +669,30 @@ func TestTranspose(t *testing.T) {
 		t.Fatalf("strides: want %v, got %v", wantStrides, got.strides)
 	}
 }
+
+func TestIsContiguous(t *testing.T) {
+	tests := []struct {
+		name   string
+		tensor *Tensor
+		want   bool
+	}{
+		{
+			name:   "tensor is contiguous",
+			tensor: New(2, 3, 4),
+			want:   true,
+		},
+		{
+			name:   "tensor is not contiguous",
+			tensor: New(2, 3, 4).Transpose(),
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tensor.IsContiguous(); got != tt.want {
+				t.Errorf("isContiguous: want: %v, got: %v", tt.want, got)
+			}
+		})
+	}
+}

@@ -86,3 +86,17 @@ func (t *Tensor) Reshape(shape ...int) *Tensor {
 		offset:  t.offset,
 	}
 }
+
+func (t *Tensor) IsContiguous() bool {
+	expected := 1
+
+	for i := len(t.shape) - 1; i >= 0; i-- {
+		if t.strides[i] != expected {
+			return false
+		}
+
+		expected *= t.shape[i]
+	}
+
+	return true
+}
