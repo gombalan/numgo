@@ -646,3 +646,26 @@ func TestReshape(t *testing.T) {
 		})
 	}
 }
+
+func TestTranspose(t *testing.T) {
+	tensor := New(2, 3)
+
+	tensor.Set(1, 0, 0)
+	tensor.Set(2, 0, 1)
+	tensor.Set(3, 0, 2)
+	tensor.Set(4, 1, 0)
+	tensor.Set(5, 1, 1)
+	tensor.Set(6, 1, 2)
+
+	got := tensor.Transpose()
+
+	wantShape := []int{3, 2}
+	if !reflect.DeepEqual(got.Shape(), wantShape) {
+		t.Fatalf("shape: want %v, got %v", wantShape, got.Shape())
+	}
+
+	wantStrides := []int{1, 3}
+	if !reflect.DeepEqual(got.strides, wantStrides) {
+		t.Fatalf("strides: want %v, got %v", wantStrides, got.strides)
+	}
+}

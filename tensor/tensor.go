@@ -4,6 +4,7 @@ type Tensor struct {
 	data    []float64
 	shape   []int
 	strides []int
+	offset  int
 }
 
 func New(shape ...int) *Tensor {
@@ -50,7 +51,13 @@ func (t *Tensor) Rank() int {
 }
 
 func (t *Tensor) Size() int {
-	return len(t.data)
+	size := 1
+
+	for _, n := range t.shape {
+		size *= n
+	}
+
+	return size
 }
 
 func (t *Tensor) Reshape(shape ...int) *Tensor {
@@ -58,17 +65,17 @@ func (t *Tensor) Reshape(shape ...int) *Tensor {
 		panic("tensor must have at least one dimension")
 	}
 
-	size := 1
+	newSize := 1
 
 	for _, n := range shape {
 		if n <= 0 {
 			panic("invalid shape")
 		}
 
-		size *= n
+		newSize *= n
 	}
 
-	if size != len(t.data) {
+	if newSize != len(t.data) {
 		panic("reshape size mismatch")
 	}
 
@@ -76,5 +83,6 @@ func (t *Tensor) Reshape(shape ...int) *Tensor {
 		data:    t.data,
 		shape:   append([]int(nil), shape...),
 		strides: makeStrides(shape...),
+		offset:  t.offset,
 	}
 }

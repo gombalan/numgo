@@ -13,8 +13,9 @@ func (t *Tensor) offsetOf(indices ...int) int {
 		panic("invalid indices")
 	}
 
-	offset := 0
-	for i := 0; i < len(indices); i++ {
+	offset := t.offset
+
+	for i := range indices {
 		if indices[i] < 0 || indices[i] >= t.shape[i] {
 			panic("invalid indices")
 		}
