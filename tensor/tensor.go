@@ -1,5 +1,7 @@
 package tensor
 
+import "slices"
+
 type Tensor struct {
 	data    []float64
 	shape   []int
@@ -63,12 +65,12 @@ func (t *Tensor) Size() int {
 func (t *Tensor) IsContiguous() bool {
 	expected := 1
 
-	for i := len(t.shape) - 1; i >= 0; i-- {
+	for i, v := range slices.Backward(t.shape) {
 		if t.strides[i] != expected {
 			return false
 		}
 
-		expected *= t.shape[i]
+		expected *= v
 	}
 
 	return true

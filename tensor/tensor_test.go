@@ -1,7 +1,7 @@
 package tensor
 
 import (
-	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -60,7 +60,7 @@ func TestMakeStrides(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			strides := makeStrides(tt.shape...)
 
-			if !reflect.DeepEqual(strides, tt.want) {
+			if !slices.Equal(strides, tt.want) {
 				t.Errorf("strides: want %v, got %v", tt.want, strides)
 			}
 		})
@@ -117,15 +117,15 @@ func TestNew(t *testing.T) {
 
 			got := New(tt.shape...)
 
-			if !reflect.DeepEqual(len(got.data), tt.wantSize) {
+			if len(got.data) != tt.wantSize {
 				t.Errorf("data length: want %v, got %v", tt.wantSize, got.data)
 			}
 
-			if !reflect.DeepEqual(got.shape, tt.wantShape) {
+			if !slices.Equal(got.shape, tt.wantShape) {
 				t.Errorf("shape: want %v, got %v", tt.wantShape, got.shape)
 			}
 
-			if !reflect.DeepEqual(got.strides, tt.wantStrides) {
+			if !slices.Equal(got.strides, tt.wantStrides) {
 				t.Errorf("strides: want %v, got %v", tt.wantStrides, got.strides)
 			}
 		})
@@ -160,7 +160,7 @@ func TestShape(t *testing.T) {
 			got := New(tt.shape...)
 			shape := got.Shape()
 
-			if !reflect.DeepEqual(shape, tt.want) {
+			if !slices.Equal(shape, tt.want) {
 				t.Errorf("shape: want %v, got %v", tt.want, shape)
 			}
 		})
@@ -195,7 +195,7 @@ func TestRank(t *testing.T) {
 			got := New(tt.shape...)
 			rank := got.Rank()
 
-			if !reflect.DeepEqual(rank, tt.want) {
+			if rank != tt.want {
 				t.Errorf("rank: want %v, got %v", tt.want, rank)
 			}
 		})
@@ -230,7 +230,7 @@ func TestSize(t *testing.T) {
 			got := New(tt.shape...)
 			size := got.Size()
 
-			if !reflect.DeepEqual(size, tt.want) {
+			if size != tt.want {
 				t.Errorf("size: want %v, got %v", tt.want, size)
 			}
 		})
@@ -644,7 +644,7 @@ func TestReshape(t *testing.T) {
 
 			newTensor := tt.tensor.Reshape(tt.newShape...)
 
-			if !reflect.DeepEqual(newTensor.shape, tt.want) {
+			if !slices.Equal(newTensor.shape, tt.want) {
 				t.Errorf("shape: want: %v, got: %v", tt.want, newTensor.shape)
 			}
 		})
@@ -664,12 +664,12 @@ func TestTranspose(t *testing.T) {
 	got := tensor.Transpose()
 
 	wantShape := []int{3, 2}
-	if !reflect.DeepEqual(got.Shape(), wantShape) {
+	if !slices.Equal(got.Shape(), wantShape) {
 		t.Fatalf("shape: want %v, got %v", wantShape, got.Shape())
 	}
 
 	wantStrides := []int{1, 3}
-	if !reflect.DeepEqual(got.strides, wantStrides) {
+	if !slices.Equal(got.strides, wantStrides) {
 		t.Fatalf("strides: want %v, got %v", wantStrides, got.strides)
 	}
 }
@@ -696,6 +696,140 @@ func TestIsContiguous(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tensor.IsContiguous(); got != tt.want {
 				t.Errorf("isContiguous: want: %v, got: %v", tt.want, got)
+			}
+		})
+	}
+}
+
+func TestSlice(t *testing.T) {
+	tests := []struct {
+		name        string
+		tensor      *Tensor
+		start       int
+		end         int
+		axis        int
+		wantPanic   string
+		wantShape   []int
+		wantStrides []int
+		wantOffset  int
+	}{
+		{
+			name:      "negative axis",
+			tensor:    New(2, 3),
+			start:     1,
+			end:       1,
+			axis:      -1,
+			wantPanic: "invalid axis",
+		},
+		{
+			name:      "axis exceeds rank",
+			tensor:    New(2, 3),
+			start:     1,
+			end:       1,
+			axis:      2,
+			wantPanic: "invalid axis",
+		},
+		{
+			name:      "negative start",
+			tensor:    New(2, 3),
+			start:     -1,
+			end:       1,
+			axis:      0,
+			wantPanic: "invalid start of slice",
+		},
+		{
+			name:      "start exceeds axis dimension",
+			tensor:    New(2, 3),
+			start:     2,
+			end:       1,
+			axis:      0,
+			wantPanic: "invalid start of slice",
+		},
+		{
+			name:      "negative end",
+			tensor:    New(2, 3),
+			start:     1,
+			end:       -1,
+			axis:      0,
+			wantPanic: "invalid end of slice",
+		},
+		{
+			name:      "end exceeds axis dimension",
+			tensor:    New(2, 3),
+			start:     1,
+			end:       3,
+			axis:      0,
+			wantPanic: "invalid end of slice",
+		},
+		{
+			name:      "invalid range",
+			tensor:    New(2, 3),
+			start:     2,
+			end:       1,
+			axis:      1,
+			wantPanic: "invalid range",
+		},
+		{
+			name:        "slice the first axis",
+			tensor:      New(4, 5),
+			start:       1,
+			end:         3,
+			axis:        0,
+			wantShape:   []int{2, 5},
+			wantStrides: []int{5, 1},
+			wantOffset:  5,
+		},
+		{
+			name:        "slice a non-zero axis",
+			tensor:      New(4, 5, 3),
+			start:       0,
+			end:         1,
+			axis:        2,
+			wantShape:   []int{4, 5, 1},
+			wantStrides: []int{15, 3, 1},
+			wantOffset:  0,
+		},
+		{
+			name:        "end == t.shape[axis]",
+			tensor:      New(4, 5, 3),
+			start:       2,
+			end:         3,
+			axis:        2,
+			wantShape:   []int{4, 5, 1},
+			wantStrides: []int{15, 3, 1},
+			wantOffset:  2,
+		},
+		{
+			name:        "slice an existing slice",
+			tensor:      New(4, 5).Slice(2, 4, 0),
+			start:       1,
+			end:         3,
+			axis:        1,
+			wantShape:   []int{2, 2},
+			wantStrides: []int{5, 1},
+			wantOffset:  11,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantPanic != "" {
+				mustPanic(t, tt.wantPanic, func() { _ = tt.tensor.Slice(tt.start, tt.end, tt.axis) })
+				return
+			}
+
+			slicedTensor := tt.tensor.Slice(tt.start, tt.end, tt.axis)
+
+			if !slices.Equal(slicedTensor.shape, tt.wantShape) {
+				t.Errorf("shape: want: %v, got: %v", tt.wantShape, slicedTensor.shape)
+			}
+
+			if !slices.Equal(slicedTensor.strides, tt.wantStrides) {
+				t.Errorf("strides: want: %v, got: %v", tt.wantStrides, slicedTensor.strides)
+			}
+
+			if slicedTensor.offset != tt.wantOffset {
+				t.Errorf("offset: want: %v, got: %v", tt.wantOffset, slicedTensor.offset)
 			}
 		})
 	}

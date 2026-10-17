@@ -1,6 +1,8 @@
 package tensor
 
-import "slices"
+import (
+	"slices"
+)
 
 func (t *Tensor) Reshape(shape ...int) *Tensor {
 	if len(shape) == 0 {
@@ -45,5 +47,37 @@ func (t *Tensor) Transpose() *Tensor {
 		shape:   newShape,
 		strides: newStrides,
 		offset:  t.offset,
+	}
+}
+
+func (t *Tensor) Slice(start, end, axis int) *Tensor {
+	if axis < 0 || axis >= len(t.shape) {
+		panic("invalid axis")
+	}
+
+	if start < 0 || start >= t.shape[axis] {
+		panic("invalid start of slice")
+	}
+
+	if end < 0 || end > t.shape[axis] {
+		panic("invalid end of slice")
+	}
+
+	if start >= end {
+		panic("invalid range")
+	}
+
+	newShape := slices.Clone(t.shape)
+	newShape[axis] = end - start
+
+	newStrides := slices.Clone(t.strides)
+
+	newOffset := t.offset + t.strides[axis]*start
+
+	return &Tensor{
+		data:    t.data,
+		shape:   newShape,
+		strides: newStrides,
+		offset:  newOffset,
 	}
 }
