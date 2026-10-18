@@ -9,7 +9,7 @@ func (t *Tensor) Set(value float64, indices ...int) {
 }
 
 func (t *Tensor) offsetOf(indices ...int) int {
-	if len(indices) != len(t.shape) {
+	if len(indices) != t.Rank() {
 		panic("invalid indices")
 	}
 

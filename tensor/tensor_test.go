@@ -652,25 +652,117 @@ func TestReshape(t *testing.T) {
 }
 
 func TestTranspose(t *testing.T) {
-	tensor := New(2, 3)
-
-	tensor.Set(1, 0, 0)
-	tensor.Set(2, 0, 1)
-	tensor.Set(3, 0, 2)
-	tensor.Set(4, 1, 0)
-	tensor.Set(5, 1, 1)
-	tensor.Set(6, 1, 2)
-
-	got := tensor.Transpose()
-
-	wantShape := []int{3, 2}
-	if !slices.Equal(got.Shape(), wantShape) {
-		t.Fatalf("shape: want %v, got %v", wantShape, got.Shape())
+	tensor2D := New(2, 3)
+	for i := range 2 {
+		for j := range 3 {
+			tensor2D.Set(float64(i*3+j+1), i, j)
+		}
 	}
 
-	wantStrides := []int{1, 3}
-	if !slices.Equal(got.strides, wantStrides) {
-		t.Fatalf("strides: want %v, got %v", wantStrides, got.strides)
+	tensor3D := New(2, 3, 3)
+	for i := range 2 {
+		for j := range 3 {
+			for k := range 3 {
+				tensor3D.Set(float64(i*9+j*3+k+1), i, j, k)
+			}
+		}
+	}
+
+	tests := []struct {
+		name        string
+		tensor      *Tensor
+		axes        []int
+		wantPanic   string
+		wantShape   []int
+		wantStrides []int
+		wantOffset  int
+	}{
+		{
+			name:      "invalid number of axes",
+			tensor:    tensor2D,
+			axes:      []int{1},
+			wantPanic: "invalid number of axes",
+		},
+		{
+			name:      "negative axis",
+			tensor:    tensor2D,
+			axes:      []int{-1, 0},
+			wantPanic: "invalid axis",
+		},
+		{
+			name:      "axis equal to rank",
+			tensor:    tensor2D,
+			axes:      []int{2, 0},
+			wantPanic: "invalid axis",
+		},
+		{
+			name:      "duplicated axis",
+			tensor:    tensor3D,
+			axes:      []int{1, 2, 2},
+			wantPanic: "duplicated axis",
+		},
+		{
+			name:        "reverses all axes",
+			tensor:      tensor3D,
+			wantShape:   []int{3, 3, 2},
+			wantStrides: []int{1, 3, 9},
+			wantOffset:  0,
+		},
+		{
+			name:        "swaps the axes",
+			tensor:      tensor2D,
+			axes:        []int{1, 0},
+			wantShape:   []int{3, 2},
+			wantStrides: []int{1, 3},
+			wantOffset:  0,
+		},
+		{
+			name:        "arbitrary permutation 1",
+			tensor:      tensor3D,
+			axes:        []int{1, 0, 2},
+			wantShape:   []int{3, 2, 3},
+			wantStrides: []int{3, 9, 1},
+			wantOffset:  0,
+		},
+		{
+			name:        "arbitrary permutation 2",
+			tensor:      tensor3D,
+			axes:        []int{2, 0, 1},
+			wantShape:   []int{3, 2, 3},
+			wantStrides: []int{1, 9, 3},
+			wantOffset:  0,
+		},
+		{
+			name:        "transpose a sliced tensor",
+			tensor:      tensor3D.Slice(1, 3, 1),
+			axes:        []int{2, 0, 1},
+			wantShape:   []int{3, 2, 2},
+			wantStrides: []int{1, 9, 3},
+			wantOffset:  3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantPanic != "" {
+				mustPanic(t, tt.wantPanic, func() { _ = tt.tensor.Transpose(tt.axes...) })
+				return
+			}
+
+			transposedTensor := tt.tensor.Transpose(tt.axes...)
+
+			if !slices.Equal(transposedTensor.shape, tt.wantShape) {
+				t.Errorf("shape: want: %v, got: %v", tt.wantShape, transposedTensor.shape)
+			}
+
+			if !slices.Equal(transposedTensor.strides, tt.wantStrides) {
+				t.Errorf("strides: want: %v, got: %v", tt.wantStrides, transposedTensor.strides)
+			}
+
+			if transposedTensor.offset != tt.wantOffset {
+				t.Errorf("offset: want: %v, got: %v", tt.wantOffset, transposedTensor.offset)
+			}
+		})
 	}
 }
 

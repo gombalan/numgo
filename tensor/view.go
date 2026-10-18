@@ -35,12 +35,44 @@ func (t *Tensor) Reshape(shape ...int) *Tensor {
 	}
 }
 
-func (t *Tensor) Transpose() *Tensor {
+func (t *Tensor) Transpose(axes ...int) *Tensor {
 	newShape := slices.Clone(t.shape)
-	slices.Reverse(newShape)
-
 	newStrides := slices.Clone(t.strides)
-	slices.Reverse(newStrides)
+
+	if len(axes) == 0 {
+		slices.Reverse(newShape)
+		slices.Reverse(newStrides)
+
+		return &Tensor{
+			data:    t.data,
+			shape:   newShape,
+			strides: newStrides,
+			offset:  t.offset,
+		}
+	}
+
+	rank := t.Rank()
+
+	if len(axes) != rank {
+		panic("invalid number of axes")
+	}
+
+	seen := make([]bool, rank)
+
+	for i, axis := range axes {
+		if axis < 0 || axis >= rank {
+			panic("invalid axis")
+		}
+
+		if seen[axis] {
+			panic("duplicated axis")
+		}
+
+		seen[axis] = true
+
+		newShape[i] = t.shape[axis]
+		newStrides[i] = t.strides[axis]
+	}
 
 	return &Tensor{
 		data:    t.data,
@@ -51,7 +83,7 @@ func (t *Tensor) Transpose() *Tensor {
 }
 
 func (t *Tensor) Slice(start, end, axis int) *Tensor {
-	if axis < 0 || axis >= len(t.shape) {
+	if axis < 0 || axis >= t.Rank() {
 		panic("invalid axis")
 	}
 
