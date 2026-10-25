@@ -5,23 +5,23 @@ import (
 	"testing"
 )
 
-func mustPanic(t *testing.T, want string, fn func()) {
+func mustPanic(t *testing.T, name string, want string, fn func()) {
 	t.Helper()
 
 	defer func() {
 		r := recover()
 
 		if r == nil {
-			t.Fatalf("expected panic %q, but no panic occurred", want)
+			t.Fatalf("%q: expected panic %q, but no panic occurred", name, want)
 		}
 
 		msg, ok := r.(string)
 		if !ok {
-			t.Fatalf("expected panic string, got %T", r)
+			t.Fatalf("%q: expected panic string, got %T", name, r)
 		}
 
 		if msg != want {
-			t.Fatalf("expected panic %q, got %q", want, msg)
+			t.Fatalf("%q: expected panic %q, got %q", name, want, msg)
 		}
 	}()
 
@@ -111,7 +111,7 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { New(tt.shape...) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { New(tt.shape...) })
 				return
 			}
 
@@ -336,7 +336,7 @@ func TestOffsetOf(t *testing.T) {
 			tensor := New(tt.shape...)
 
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { tensor.offsetOf(tt.indices...) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { tensor.offsetOf(tt.indices...) })
 				return
 			}
 
@@ -448,7 +448,7 @@ func TestAt(t *testing.T) {
 			tensor := New(tt.shape...)
 
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { tensor.At(tt.indices...) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { tensor.At(tt.indices...) })
 				return
 			}
 
@@ -574,7 +574,7 @@ func TestSet(t *testing.T) {
 			tensor := New(tt.shape...)
 
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { tensor.At(tt.indices...) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { tensor.At(tt.indices...) })
 				return
 			}
 
@@ -638,7 +638,7 @@ func TestReshape(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { _ = tt.tensor.Reshape(tt.newShape...) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { _ = tt.tensor.Reshape(tt.newShape...) })
 				return
 			}
 
@@ -734,7 +734,7 @@ func TestTranspose(t *testing.T) {
 		},
 		{
 			name:        "transpose a sliced tensor",
-			tensor:      tensor3D.Slice(1, 3, 1),
+			tensor:      tensor3D.Slice(SliceRange{0, 2}, SliceRange{1, 3}, SliceRange{0, 3}),
 			axes:        []int{2, 0, 1},
 			wantShape:   []int{3, 2, 2},
 			wantStrides: []int{1, 9, 3},
@@ -745,7 +745,7 @@ func TestTranspose(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { _ = tt.tensor.Transpose(tt.axes...) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { _ = tt.tensor.Transpose(tt.axes...) })
 				return
 			}
 
@@ -797,76 +797,58 @@ func TestSlice(t *testing.T) {
 	tests := []struct {
 		name        string
 		tensor      *Tensor
-		start       int
-		end         int
-		axis        int
+		ranges      []SliceRange
 		wantPanic   string
 		wantShape   []int
 		wantStrides []int
 		wantOffset  int
 	}{
 		{
-			name:      "negative axis",
+			name:      "axis below rank",
 			tensor:    New(2, 3),
-			start:     1,
-			end:       1,
-			axis:      -1,
-			wantPanic: "invalid axis",
+			ranges:    []SliceRange{{1, 1}},
+			wantPanic: "invalid number of ranges",
 		},
 		{
 			name:      "axis exceeds rank",
 			tensor:    New(2, 3),
-			start:     1,
-			end:       1,
-			axis:      2,
-			wantPanic: "invalid axis",
+			ranges:    []SliceRange{{1, 2}, {1, 3}, {1, 2}},
+			wantPanic: "invalid number of ranges",
 		},
 		{
 			name:      "negative start",
 			tensor:    New(2, 3),
-			start:     -1,
-			end:       1,
-			axis:      0,
+			ranges:    []SliceRange{{-1, 2}, {1, 3}},
 			wantPanic: "invalid start of slice",
 		},
 		{
 			name:      "start exceeds axis dimension",
 			tensor:    New(2, 3),
-			start:     2,
-			end:       1,
-			axis:      0,
+			ranges:    []SliceRange{{2, 2}, {1, 3}},
 			wantPanic: "invalid start of slice",
 		},
 		{
 			name:      "negative end",
 			tensor:    New(2, 3),
-			start:     1,
-			end:       -1,
-			axis:      0,
+			ranges:    []SliceRange{{1, -2}, {1, 3}},
 			wantPanic: "invalid end of slice",
 		},
 		{
 			name:      "end exceeds axis dimension",
 			tensor:    New(2, 3),
-			start:     1,
-			end:       3,
-			axis:      0,
+			ranges:    []SliceRange{{1, 3}, {1, 3}},
 			wantPanic: "invalid end of slice",
 		},
 		{
 			name:      "invalid range",
 			tensor:    New(2, 3),
-			start:     2,
-			end:       1,
-			axis:      1,
+			ranges:    []SliceRange{{1, 0}, {1, 3}},
 			wantPanic: "invalid range",
 		},
 		{
 			name:        "slice the first axis",
 			tensor:      New(4, 5),
-			start:       1,
-			end:         3,
-			axis:        0,
+			ranges:      []SliceRange{{1, 3}, {0, 5}},
 			wantShape:   []int{2, 5},
 			wantStrides: []int{5, 1},
 			wantOffset:  5,
@@ -874,29 +856,23 @@ func TestSlice(t *testing.T) {
 		{
 			name:        "slice a non-zero axis",
 			tensor:      New(4, 5, 3),
-			start:       0,
-			end:         1,
-			axis:        2,
+			ranges:      []SliceRange{{0, 4}, {0, 5}, {1, 2}},
 			wantShape:   []int{4, 5, 1},
 			wantStrides: []int{15, 3, 1},
-			wantOffset:  0,
+			wantOffset:  1,
 		},
 		{
 			name:        "end == t.shape[axis]",
 			tensor:      New(4, 5, 3),
-			start:       2,
-			end:         3,
-			axis:        2,
+			ranges:      []SliceRange{{0, 4}, {0, 5}, {2, 3}},
 			wantShape:   []int{4, 5, 1},
 			wantStrides: []int{15, 3, 1},
 			wantOffset:  2,
 		},
 		{
 			name:        "slice an existing slice",
-			tensor:      New(4, 5).Slice(2, 4, 0),
-			start:       1,
-			end:         3,
-			axis:        1,
+			tensor:      New(4, 5).Slice(SliceRange{2, 4}, SliceRange{0, 5}),
+			ranges:      []SliceRange{{0, 2}, {1, 3}},
 			wantShape:   []int{2, 2},
 			wantStrides: []int{5, 1},
 			wantOffset:  11,
@@ -906,11 +882,11 @@ func TestSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantPanic != "" {
-				mustPanic(t, tt.wantPanic, func() { _ = tt.tensor.Slice(tt.start, tt.end, tt.axis) })
+				mustPanic(t, tt.name, tt.wantPanic, func() { _ = tt.tensor.Slice(tt.ranges...) })
 				return
 			}
 
-			slicedTensor := tt.tensor.Slice(tt.start, tt.end, tt.axis)
+			slicedTensor := tt.tensor.Slice(tt.ranges...)
 
 			if !slices.Equal(slicedTensor.shape, tt.wantShape) {
 				t.Errorf("shape: want: %v, got: %v", tt.wantShape, slicedTensor.shape)

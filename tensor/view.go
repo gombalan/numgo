@@ -82,29 +82,37 @@ func (t *Tensor) Transpose(axes ...int) *Tensor {
 	}
 }
 
-func (t *Tensor) Slice(start, end, axis int) *Tensor {
-	if axis < 0 || axis >= t.Rank() {
-		panic("invalid axis")
-	}
+type SliceRange struct {
+	Start int
+	End   int
+}
 
-	if start < 0 || start >= t.shape[axis] {
-		panic("invalid start of slice")
-	}
-
-	if end < 0 || end > t.shape[axis] {
-		panic("invalid end of slice")
-	}
-
-	if start >= end {
-		panic("invalid range")
+func (t *Tensor) Slice(ranges ...SliceRange) *Tensor {
+	if len(ranges) != t.Rank() {
+		panic("invalid number of ranges")
 	}
 
 	newShape := slices.Clone(t.shape)
-	newShape[axis] = end - start
+	newOffset := t.offset
+
+	for axis, r := range ranges {
+		if r.Start < 0 || r.Start >= t.shape[axis] {
+			panic("invalid start of slice")
+		}
+
+		if r.End < 0 || r.End > t.shape[axis] {
+			panic("invalid end of slice")
+		}
+
+		if r.Start >= r.End {
+			panic("invalid range")
+		}
+
+		newShape[axis] = r.End - r.Start
+		newOffset += t.strides[axis] * r.Start
+	}
 
 	newStrides := slices.Clone(t.strides)
-
-	newOffset := t.offset + t.strides[axis]*start
 
 	return &Tensor{
 		data:    t.data,
