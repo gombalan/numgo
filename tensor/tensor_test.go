@@ -902,3 +902,52 @@ func TestSlice(t *testing.T) {
 		})
 	}
 }
+
+func TestBroadcastShapes(t *testing.T) {
+	tests := []struct {
+		name      string
+		a         []int
+		b         []int
+		wantShape []int
+		wantErr   bool
+	}{
+		{
+			name:      "same shapes",
+			a:         []int{2, 3},
+			b:         []int{2, 3},
+			wantShape: []int{2, 3},
+		},
+		{
+			name:      "lower rank",
+			a:         []int{2, 3},
+			b:         []int{3},
+			wantShape: []int{2, 3},
+		},
+		{
+			name:      "broadcast singleton dimension",
+			a:         []int{2, 1, 3},
+			b:         []int{4, 3},
+			wantShape: []int{2, 4, 3},
+		},
+		{
+			name:      "incompatible shapes",
+			a:         []int{2, 3},
+			b:         []int{2, 4},
+			wantShape: nil,
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := broadcastShapes(tt.a, tt.b)
+			if (tt.wantErr && err == nil) || (!tt.wantErr && err != nil) {
+				t.Errorf("error: want: %v, got: %v", tt.wantErr, err)
+			}
+
+			if !slices.Equal(got, tt.wantShape) {
+				t.Errorf("error: want: %v, got: %v", tt.wantShape, got)
+			}
+		})
+	}
+}
