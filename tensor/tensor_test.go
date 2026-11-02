@@ -951,3 +951,59 @@ func TestBroadcastShapes(t *testing.T) {
 		})
 	}
 }
+
+func TestBroadcastStrides(t *testing.T) {
+	tests := []struct {
+		name        string
+		shape       []int
+		strides     []int
+		outputShape []int
+		wantStrides []int
+	}{
+		{
+			name:        "one to two dimensions",
+			shape:       []int{3},
+			strides:     []int{1},
+			outputShape: []int{2, 3},
+			wantStrides: []int{0, 1},
+		},
+		{
+			name:        "same shape",
+			shape:       []int{2, 3},
+			strides:     []int{3, 1},
+			outputShape: []int{2, 3},
+			wantStrides: []int{3, 1},
+		},
+		{
+			name:        "one dimension to three dimensions",
+			shape:       []int{3},
+			strides:     []int{1},
+			outputShape: []int{2, 4, 3},
+			wantStrides: []int{0, 0, 1},
+		},
+		{
+			name:        "broadcast multiple singleton dimensions",
+			shape:       []int{1, 3, 1},
+			strides:     []int{3, 1, 1},
+			outputShape: []int{2, 3, 4},
+			wantStrides: []int{0, 1, 0},
+		},
+		{
+			name:        "broadcast all singleton dimensions",
+			shape:       []int{1, 1},
+			strides:     []int{1, 1},
+			outputShape: []int{2, 3},
+			wantStrides: []int{0, 0},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := broadcastStrides(tt.shape, tt.strides, tt.outputShape)
+
+			if !slices.Equal(got, tt.wantStrides) {
+				t.Errorf("strides: want: %v, got: %v", tt.wantStrides, got)
+			}
+		})
+	}
+}

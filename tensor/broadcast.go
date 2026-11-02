@@ -28,3 +28,27 @@ func broadcastShapes(a, b []int) ([]int, error) {
 
 	return shape, nil
 }
+
+func broadcastStrides(shape, strides, outputShape []int) []int {
+	result := make([]int, len(outputShape))
+
+	offset := len(outputShape) - len(shape)
+
+	for i := range outputShape {
+		inputAxis := i - offset
+
+		if inputAxis < 0 {
+			result[i] = 0
+			continue
+		}
+
+		if shape[inputAxis] == 1 && outputShape[i] > 1 {
+			result[i] = 0
+			continue
+		}
+
+		result[i] = strides[inputAxis]
+	}
+
+	return result
+}
